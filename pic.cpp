@@ -3,17 +3,12 @@
 #include <algorithm>
 #define MAX_N 70
 #define MAX_K 40
-#define MAXCIF_X 22
-#define MAXCIF_V 22
-#define LGMAX_X MAXCIF_X*2+1
-#define LGMAX_V MAXCIF_V*2+1
+#define MAXCIF 30
+#define LGMAX MAXCIF*2+1
 using namespace std;
 // fisiere citire/scriere
 ifstream fin("pic.in");
 ofstream fout("pic.out");
-// constante globale
-const int LGMAX = LGMAX_X > LGMAX_V ? LGMAX_X : LGMAX_V;
-const int MAXCIF = MAXCIF_X > MAXCIF_V ? MAXCIF_X : MAXCIF_V;
 // structuri abstracte
 struct NrMare
 {
@@ -31,24 +26,37 @@ int comparaNrMari(NrMare, NrMare);
 void initializeazaNrMare(NrMare &, int=MAXCIF);
 NrMare sumaNrMari(NrMare, NrMare);
 NrMare diferentaNrMari(NrMare, NrMare);
+bool diferitDeZero(NrMare);
 // functia principala
 int main()
 {
 	int n, k, i;
 	NrMare x[MAX_N], v[MAX_K], s;
 	citesteDateIntrare(n, k, x, v);
-	initializeazaNrMare(s, MAXCIF+2);
+	initializeazaNrMare(s); // s = 0
 	for (i = 0; i < n; i++)
 	{
 		s = sumaNrMari(x[i], s); // s += x[i]
 	}
 	sort(v, v+k, compar);
-	for (i = 0; i < k && comparaNrMari(s, v[i]) >= 0; i++)
+	for (i = 0; i < k
+		    && diferitDeZero(s)
+		    && comparaNrMari(s, v[i]) >= 0; i++)
 	{
 		s = diferentaNrMari(s, v[i]); // s -= v[i]
 	}
 	fout << i;
 	return 0;
+}
+bool diferitDeZero(NrMare a)
+{
+	int i;
+	for (i = 0; i < a.nrcif && a.cif[i] == 0; i++);
+	if (i == a.nrcif)
+	{
+		return 0;
+	}
+	return 1;
 }
 NrMare diferentaNrMari(NrMare a, NrMare b)
 {
@@ -200,4 +208,4 @@ void afiseazaNrMare(NrMare nr)
 	}
 	fout << '\n';
 }
-// scor 90
+// scor 90/100
