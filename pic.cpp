@@ -1,211 +1,115 @@
 #include <fstream>
-#include <cstring>
 #include <algorithm>
-#define MAX_N 70
-#define MAX_K 40
-#define MAXCIF 30
-#define LGMAX MAXCIF*2+1
+#define MAX_CIFRE 30
+#define MAX_BUTOAIE 40
 using namespace std;
-// fisiere citire/scriere
 ifstream fin("pic.in");
 ofstream fout("pic.out");
-// structuri abstracte
-struct NrMare
-{
-	char cif[MAXCIF];
-	int nrcif;
-};
-// functii ajutatoare
-void eliminaToateAparitiileCaracteruluiDinSir(char, char*, int=LGMAX);
-void creeazaNrMareDinSir(NrMare &, char*);
-void afiseazaNrMare(NrMare);
-void citesteDateIntrare(int &, int &, NrMare*, NrMare*);
-void citesteNrMari(int, NrMare*);
-bool compar(NrMare, NrMare);
+struct NrMare { int nrCifre, cifre[MAX_CIFRE]; };
+void citesteNrMare(NrMare&);
+void initializeazaNrMareCuZero(NrMare&);
+void adunaNrMari(NrMare, NrMare, NrMare&);
+void scadeNrMari(NrMare, NrMare, NrMare&);
 int comparaNrMari(NrMare, NrMare);
-void initializeazaNrMare(NrMare &, int=MAXCIF);
-NrMare sumaNrMari(NrMare, NrMare);
-NrMare diferentaNrMari(NrMare, NrMare);
-bool diferitDeZero(NrMare);
-// functia principala
+bool comparaButoaie(NrMare, NrMare);
 int main()
 {
-	int n, k, i;
-	NrMare x[MAX_N], v[MAX_K], s;
-	citesteDateIntrare(n, k, x, v);
-	initializeazaNrMare(s); // s = 0
-	for (i = 0; i < n; i++)
+	int i, nrVase, nrButoaie, nrMaxim;
+	NrMare vas, picaturi, butoaie[MAX_BUTOAIE];
+	initializeazaNrMareCuZero(picaturi);
+	fin >> nrVase;
+	for (i = 0; i < nrVase; i++)
 	{
-		s = sumaNrMari(x[i], s); // s += x[i]
+		citesteNrMare(vas);
+		adunaNrMari(picaturi, vas, picaturi);
 	}
-	sort(v, v+k, compar);
-	for (i = 0; i < k
-		    && diferitDeZero(s)
-		    && comparaNrMari(s, v[i]) >= 0; i++)
-	{
-		s = diferentaNrMari(s, v[i]); // s -= v[i]
-	}
-	fout << i;
-	return 0;
-}
-bool diferitDeZero(NrMare a)
-{
-	int i;
-	for (i = 0; i < a.nrcif && a.cif[i] == 0; i++);
-	if (i == a.nrcif)
-	{
-		return 0;
-	}
-	return 1;
-}
-NrMare diferentaNrMari(NrMare a, NrMare b)
-{
-	// d = a - b
-	int i, t, val;
-	NrMare d;
-	for (i = b.nrcif; i < a.nrcif; i++)
-	{
-		b.cif[i] = 0;
-	}
-	for (t = i = 0; i < a.nrcif; i++)
-	{
-		val = a.cif[i]-b.cif[i]+t;
-		if (val < 0)
+	fin >> nrButoaie;
+	for (i = 0; i < nrButoaie; i++)
+		citesteNrMare(butoaie[i]);
+	fin.close();
+	sort(butoaie, butoaie + nrButoaie, comparaButoaie);
+	for (nrMaxim = i = 0; i < nrButoaie; i++)
+		if (comparaNrMari(picaturi, butoaie[i]) >= 0)
 		{
-			d.cif[i] = val+10;
-			t = -1;
+			nrMaxim++;
+			scadeNrMari(picaturi, butoaie[i], picaturi);
 		}
 		else
-		{
-			d.cif[i] = val;
-			t = 0;
-		}
-	}
-	// ignor zerourile nesemnificative si actualizez nr. de cifre al lui d
-	for (d.nrcif = a.nrcif; d.nrcif > 1 && d.cif[d.nrcif-1] == 0; d.nrcif--);
-	return d;
+			break;
+	fout << nrMaxim;
+	fout.close();
+	return 0;
 }
-NrMare sumaNrMari(NrMare a, NrMare b)
+void scadeNrMari(NrMare a, NrMare b, NrMare& d)
 {
-	// s = a + b 
 	int i, t, val;
-	NrMare s;
-	// completeaza numarul cel mai mic cu zerouri nesemnificative
-	if (a.nrcif < b.nrcif)
+	d.nrCifre = a.nrCifre > b.nrCifre ? a.nrCifre : b.nrCifre;
+	if (a.nrCifre < b.nrCifre)
+		for (i = a.nrCifre; i < b.nrCifre; i++)
+			a.cifre[i] = 0;
+	else if (b.nrCifre < a.nrCifre)
+		for (i = b.nrCifre; i < a.nrCifre; i++)
+			b.cifre[i] = 0;
+	for (t = i = 0; i < d.nrCifre; i++)
 	{
-		for (i = a.nrcif; i < b.nrcif; i++)
-		{
-			a.cif[i] = 0;
-		}
-		s.nrcif = b.nrcif;
+		val = a.cifre[i]-b.cifre[i]-t;
+		if (val < 0)
+			val += 10, t = 1;
+		else
+			t = 0;
+		d.cifre[i] = val;
 	}
-	else
-	{
-		for (i = b.nrcif; i < a.nrcif; i++)
-		{
-			b.cif[i] = 0;
-		}
-		s.nrcif = a.nrcif;
-	}
-	// aduna cele doua numere si retine rezultatul in s
-	for (t = i = 0; i < s.nrcif; i++)
-	{
-		val = a.cif[i]+b.cif[i]+t;
-		s.cif[i] = val%10;
-		t = val/10;
-	}
-	if (t)
-	{
-		s.cif[s.nrcif++] = t;
-	}
-	return s;
+	for (i = d.nrCifre-1; i > 0 && d.cifre[i] == 0; i--);
+	d.nrCifre = i+1;
 }
-void initializeazaNrMare(NrMare & a, int NRMAXCIF)
+
+void initializeazaNrMareCuZero(NrMare& a)
 {
-	a.nrcif = 1;
-	for (int i = 0; i < NRMAXCIF; i++)
-	{
-		a.cif[i] = 0;
-	}
+	a.nrCifre = 1;
+	a.cifre[0] = 0;
 }
 int comparaNrMari(NrMare a, NrMare b)
 {
-	if (a.nrcif < b.nrcif)
-	{
-		return -1;
-	}
-	if (a.nrcif > b.nrcif)
-	{
-		return 1;
-	}
 	int i;
-	for (i = a.nrcif-1; i >= 0 && a.cif[i] == b.cif[i]; i--);
-	if (i < 0)
-	{
-		return 0;
-	}
-	if (a.cif[i] < b.cif[i])
-	{
+	if (a.nrCifre < b.nrCifre)
 		return -1;
-	}
+	if (a.nrCifre > b.nrCifre)
+		return 1;
+	for (i = a.nrCifre-1; i >= 0 && a.cifre[i] == b.cifre[i]; i--);
+	if (i < 0)
+		return 0;
+	if (a.cifre[i] < b.cifre[i])
+		return -1;
 	return 1;
 }
-bool compar(NrMare a, NrMare b)
+bool comparaButoaie(NrMare a, NrMare b)
 {
-	return comparaNrMari(a, b) < 0;
+	if (comparaNrMari(a, b) < 0)
+		return 1;
+	return 0;
 }
-void citesteNrMari(int n, NrMare* x)
+void adunaNrMari(NrMare a, NrMare b, NrMare& s)
 {
-	char s[LGMAX];
-	for (int i = 0; i < n; i++)
+	int i, t, val;
+	s.nrCifre = a.nrCifre > b.nrCifre ? a.nrCifre : b.nrCifre;
+	if (a.nrCifre < b.nrCifre)
+		for (i = a.nrCifre; i < b.nrCifre; i++)
+			a.cifre[i] = 0;
+	else if (b.nrCifre < a.nrCifre)
+		for (i = b.nrCifre; i < a.nrCifre; i++)
+			b.cifre[i] = 0;
+	for (t = i = 0; i < s.nrCifre; i++)
 	{
-		fin.getline(s, LGMAX);
-		eliminaToateAparitiileCaracteruluiDinSir(' ', s);
-		NrMare nr;
-		creeazaNrMareDinSir(nr, s);
-		x[i] = nr;
+		val = a.cifre[i]+b.cifre[i]+t;
+		s.cifre[i] = val%10;
+		t = val/10;
 	}
+	if (t)
+		s.cifre[s.nrCifre++] = t;
 }
-void citesteDateIntrare(int & n, int & k, NrMare* x, NrMare* v)
-{	
-	fin >> n;
-	fin.get();
-	citesteNrMari(n, x);
-	fin >> k;
-	fin.get();
-	citesteNrMari(k, v);
-	fin.close();
-}
-void eliminaToateAparitiileCaracteruluiDinSir(char c, char* s, int LGMAX_SIR)
+void citesteNrMare(NrMare& a)
 {
-	char *p, q[LGMAX_SIR];
-	while(p = strchr(s, c))
-	{
-		strcpy(q, p+1);
-		*p = 0;
-		strcat(s, q);
-	}
+	fin >> a.nrCifre;
+	for (int i = 0; i < a.nrCifre; i++)
+		fin >> a.cifre[a.nrCifre-i-1];
 }
-void creeazaNrMareDinSir(NrMare & nr, char* s)
-{
-	int lg, i;
-	lg = strlen(s);
-	for (i = lg-1; i >= 0; i--)
-	{
-		nr.cif[lg-i-1] = s[i]-'0';
-	}
-	for (i = lg; i < MAXCIF; i++)
-	{
-		nr.cif[i] = 0;
-	}
-	nr.nrcif = lg;
-}
-void afiseazaNrMare(NrMare nr)
-{
-	for (int i = nr.nrcif-1; i >= 0; i--)
-	{
-		fout << (int)nr.cif[i];
-	}
-	fout << '\n';
-}
-// scor 90/100
